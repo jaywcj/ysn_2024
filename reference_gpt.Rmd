@@ -1,0 +1,68 @@
+---
+title: "testcode"
+author: "jaywong"
+date: "2024-03-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+```
+
+
+
+```{r}
+
+#combine dataframes by common part 
+
+# Sample data
+df1 <- data.frame(abbrev = c('bamk1', 'bamk2', 'abc1', 'def2'))  # Sample dataframe 1
+df2 <- data.frame(abbrev = c('bamk', 'abc', 'xyz'), 
+                  full_title = c('Bishan-Ang Mo Kio Park', 'ABC Park', 'XYZ Park'))  # Sample dataframe 2
+
+# Extract the common part of the abbreviations in df1
+df1 <- df1 %>%
+  mutate(common_part = str_extract(abbrev, "^[a-zA-Z]+"))  # Extract letters only at the start
+
+# Extract the common part of the abbreviations in df2
+df2 <- df2 %>%
+  mutate(common_part = str_extract(abbrev, "^[a-zA-Z]+"))  # Extract letters only at the start
+
+# Inner join df1 with df2 based on the common part
+result <- inner_join(df1, df2, by = "common_part") %>%
+  select(-common_part)  # Remove the common_part column from the result
+
+print(result)
+
+
+```
+
+
+```{r}
+#leaflet clusters
+
+data <- data.frame(
+  latitude = runif(100, 40, 41),
+  longitude = runif(100, -74, -73),
+  category = sample(c("Group A", "Group B", "Group C"), 100, replace = TRUE)
+)
+
+# Create a Leaflet map
+map <- leaflet(data) %>%
+  addTiles() 
+
+# Iterate over unique categories and add markers for each category
+for (category in unique(data$category)) {
+  category_data <- data[data$category == category, ]
+  map <- map %>%
+    addCircleMarkers(data = category_data, 
+                     lng = ~longitude, lat = ~latitude,
+                     clusterOptions = markerClusterOptions(),
+                     label = ~category)
+}
+
+# Display the map
+map
+```
+
+

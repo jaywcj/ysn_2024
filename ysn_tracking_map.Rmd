@@ -1,0 +1,112 @@
+```{r}
+#install.packages('pacman') #package manager for new r users
+library(pacman)
+
+p_load(leaflet)
+p_load(tidyverse)
+p_load(dplyr)
+p_load(readxl)
+p_load(janitor)
+```
+
+```{r}
+#load files
+
+read.csv("ysn_sites.csv") -> ysn_sites
+read_excel("23mar24_sessinonplan.xlsx") -> update # this file should be updated as we go along
+
+
+#view(ysn_sites)
+#view(update)
+```
+
+```{r}
+#data wrangling
+
+update <- update %>% 
+  row_to_names(row_number = 1) %>%
+  select(1,3,4) %>% 
+  rename(park_abbrev = 'Point Label')
+  
+
+#combine to form main dataframe - join by park abbrev, which is the common column
+df <- ysn_sites %>% 
+  inner_join(update, by = c("park_abbrev")) %>%
+  select(-"park_abbrev") #remove duplicate column
+
+```
+
+```{r}
+#now we can map it
+
+pal <- colorFactor(c("skyblue", "green4" ),
+                   domain = unique(df$Check))
+
+pal2 <- colorFactor(c("red3", "green2" ),
+                   domain = unique(df$Check))
+
+#map each point, note: data only indicates which parks we've covered, not which point. so this is not 100% accurate
+
+#ysn_map1 <- 
+df %>% 
+  leaflet() %>%
+  addProviderTiles('CartoDB.Voyager') %>% #'USGS.USImagery'
+  addCircleMarkers(lng = ~longitude, lat = ~latitude,
+                   stroke = TRUE, weight = 1, fillOpacity = 0.6, fillColor = ~pal(Check),
+                   color = 'black', 
+                   popup = ~point_label,
+                   label=~as.character(point_label))
+
+df %>% 
+  leaflet() %>%
+  addProviderTiles('Thunderforest.Pioneer') %>% 
+  addCircleMarkers(lng = ~longitude, lat = ~latitude,
+                   stroke = FALSE, weight = 1, fillOpacity = 0.6, fillColor = ~pal2(Check),
+                   color = 'black', 
+                   popup = ~point_label,
+                   label=~as.character(point_label))
+```
+
+
+```{r}
+#variation
+
+#because there are so many points, we can make it neater by clustering
+df %>%
+  leaflet() %>%
+  addProviderTiles('CartoDB.Voyager') %>%
+  addCircleMarkers(lng = ~longitude, lat = ~latitude,
+                   stroke = TRUE, weight = 1, fillOpacity = 0.6, fillColor = ~pal(Check),
+                   color = 'black', 
+                   popup = ~point_label,
+                   label=~as.character(point_label),
+                   clusterOptions = markerClusterOptions(group="Park", freezeAtZoom = 12, fillColor="check")) #how come fillcolour by check doesnt work :((
+
+```
+
+
+```{r}
+#if it's too messy to have each individual point, we can group by park (based on the average location)
+
+#create new dataframe
+df_by_park <- df %>%
+  group_by(Park) %>%
+  reframe(
+    centroid_longitude = mean(longitude),
+    centroid_latitude = mean(latitude),
+    check = Check) %>%
+  distinct() 
+
+
+#map
+df_by_park %>% 
+  leaflet() %>%
+  addProviderTiles('CartoDB.Voyager') %>%
+  addCircleMarkers(lng = ~centroid_longitude, lat = ~centroid_latitude,
+                   stroke = TRUE, weight = 1, fillOpacity = 0.6, fillColor = ~pal(check),
+                   color = 'black', 
+                   popup = ~Park,
+                   label=~as.character(Park),
+                   labelOptions = labelOptions(noHide = FALSE, direction = 'top', noOverlap = TRUE))
+```
+
