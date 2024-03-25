@@ -7,6 +7,7 @@ p_load(tidyverse)
 p_load(dplyr)
 p_load(readxl)
 p_load(janitor)
+p_load(htmlwidgets)
 ```
 
 ```{r}
@@ -39,32 +40,25 @@ df <- ysn_sites %>%
 ```{r}
 #now we can map it
 
-pal <- colorFactor(c("skyblue", "green4" ),
-                   domain = unique(df$Check))
+pal <- colorFactor(c("navy", "green4" ),
+                   domain = unique(df$Check_label))
 
-pal2 <- colorFactor(c("red3", "green2" ),
+pal2 <- colorFactor(c("red3", "green" ),
                    domain = unique(df$Check))
 
 #map each point, note: data only indicates which parks we've covered, not which point. so this is not 100% accurate
 
-#ysn_map1 <- 
-df %>% 
-  leaflet() %>%
+map_by_points <- df %>% 
+  leaflet(options = leafletOptions(maxZoom = 18, minZoom = 12)) %>%
   addProviderTiles('CartoDB.Voyager') %>% #'USGS.USImagery'
   addCircleMarkers(lng = ~longitude, lat = ~latitude,
                    stroke = TRUE, weight = 1, fillOpacity = 0.6, fillColor = ~pal(Check),
                    color = 'black', 
-                   popup = ~point_label,
+                   popup = ~Park,
                    label=~as.character(point_label))
 
-df %>% 
-  leaflet() %>%
-  addProviderTiles('Thunderforest.Pioneer') %>% 
-  addCircleMarkers(lng = ~longitude, lat = ~latitude,
-                   stroke = FALSE, weight = 1, fillOpacity = 0.6, fillColor = ~pal2(Check),
-                   color = 'black', 
-                   popup = ~point_label,
-                   label=~as.character(point_label))
+saveWidget(map_by_points, file = "map_by_points.html", selfcontained = TRUE) #export
+
 ```
 
 
@@ -73,7 +67,7 @@ df %>%
 
 #because there are so many points, we can make it neater by clustering
 df %>%
-  leaflet() %>%
+  leaflet(options = leafletOptions(maxZoom = 18, minZoom = 12)) %>%  
   addProviderTiles('CartoDB.Voyager') %>%
   addCircleMarkers(lng = ~longitude, lat = ~latitude,
                    stroke = TRUE, weight = 1, fillOpacity = 0.6, fillColor = ~pal(Check),
@@ -95,18 +89,26 @@ df_by_park <- df %>%
     centroid_longitude = mean(longitude),
     centroid_latitude = mean(latitude),
     check = Check) %>%
+  mutate(check_label = ifelse(check, "Surveyed", "Not yet surveyed")) %>% #change labels for the legend
   distinct() 
 
 
 #map
-df_by_park %>% 
-  leaflet() %>%
+map_park <- df_by_park %>% 
+  leaflet(options = leafletOptions(maxZoom = 18, minZoom = 12)) %>%
   addProviderTiles('CartoDB.Voyager') %>%
   addCircleMarkers(lng = ~centroid_longitude, lat = ~centroid_latitude,
-                   stroke = TRUE, weight = 1, fillOpacity = 0.6, fillColor = ~pal(check),
+                   stroke = TRUE, weight = 1, fillOpacity = 0.6, fillColor = ~pal(check_label),
                    color = 'black', 
                    popup = ~Park,
                    label=~as.character(Park),
-                   labelOptions = labelOptions(noHide = FALSE, direction = 'top', noOverlap = TRUE))
+                   labelOptions = labelOptions(noHide = FALSE, direction = 'top', noOverlap = TRUE)) %>%
+  addLegend(position = "bottomright", pal = pal, values = ~check_label,
+                 title = "Status", opacity = 1)
+
+map_park
+
+saveWidget(map_park, file = "map_by_parks.html", selfcontained = TRUE)
+
 ```
 
