@@ -67,7 +67,7 @@ saveWidget(map_by_points, file = "map_by_points.html", selfcontained = TRUE) #ex
 
 #because there are so many points, we can make it neater by clustering
 df %>%
-  leaflet(options = leafletOptions(maxZoom = 18, minZoom = 12)) %>%  
+  leaflet(options = leafletOptions(maxZoom = 18, minZoom = 11)) %>%  
   addProviderTiles('CartoDB.Voyager') %>%
   addCircleMarkers(lng = ~longitude, lat = ~latitude,
                    stroke = TRUE, weight = 1, fillOpacity = 0.6, fillColor = ~pal(Check),
@@ -95,7 +95,7 @@ df_by_park <- df %>%
 
 #map
 map_park <- df_by_park %>% 
-  leaflet(options = leafletOptions(maxZoom = 18, minZoom = 12)) %>%
+  leaflet(options = leafletOptions(maxZoom = 18, minZoom = 11)) %>%
   addProviderTiles('CartoDB.Voyager') %>%
   addCircleMarkers(lng = ~centroid_longitude, lat = ~centroid_latitude,
                    stroke = TRUE, weight = 1, fillOpacity = 0.6, fillColor = ~pal(check_label),
