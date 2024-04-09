@@ -76,7 +76,7 @@ map_park <- df_by_park %>%
 
 map_park
 
-saveWidget(map_park, file = "map_by_parks_api.html", selfcontained = TRUE)
+saveWidget(map_park, file = "map_by_parks_api.html", selfcontained = TRUE, title = 'YSN Map - Parks')
 
 ```
 
